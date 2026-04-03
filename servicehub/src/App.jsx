@@ -30,6 +30,8 @@ import UserQueries from './pages/support/UserQueries'
 import ResolvedIssues from './pages/support/ResolvedIssues'
 import SupportProfile from './pages/support/Profile'
 
+import ProtectedRoute from './components/ProtectedRoute'
+
 export default function App() {
   return (
     <Routes>
@@ -37,7 +39,14 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
-      <Route path="/user" element={<UserLayout />}>
+      <Route
+        path="/user"
+        element={
+          <ProtectedRoute allowedRole="user">
+            <UserLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<UserHome />} />
         <Route path="browse" element={<BrowseServices />} />
@@ -46,7 +55,14 @@ export default function App() {
         <Route path="help" element={<HelpSupport />} />
       </Route>
 
-      <Route path="/professional" element={<ProfessionalLayout />}>
+      <Route
+        path="/professional"
+        element={
+          <ProtectedRoute allowedRole="professional">
+            <ProfessionalLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<ProDashboard />} />
         <Route path="profile" element={<ProProfile />} />
@@ -55,7 +71,14 @@ export default function App() {
         <Route path="earnings" element={<ProEarnings />} />
       </Route>
 
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRole="admin">
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="users" element={<ManageUsers />} />
@@ -64,13 +87,22 @@ export default function App() {
         <Route path="settings" element={<AdminSettings />} />
       </Route>
 
-      <Route path="/support" element={<SupportLayout />}>
+      <Route
+        path="/support"
+        element={
+          <ProtectedRoute allowedRole="support">
+            <SupportLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<SupportDashboard />} />
         <Route path="queries" element={<UserQueries />} />
         <Route path="resolved" element={<ResolvedIssues />} />
         <Route path="profile" element={<SupportProfile />} />
       </Route>
+
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
 }
