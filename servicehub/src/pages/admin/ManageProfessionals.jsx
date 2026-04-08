@@ -1,16 +1,33 @@
-import { useState } from 'react'
-import { professionals as initialPros } from '../../data/mockData'
+import { useEffect, useState } from 'react'
+import { getAuthHeaders } from '../../utils/authHeader'
 
 export default function ManageProfessionals() {
-  const [pros, setPros] = useState(
-    initialPros.map((p) => ({ ...p, status: 'Active' }))
-  )
+  const [pros, setPros] = useState([])
   const [search, setSearch] = useState('')
+  const [error, setError] = useState('')
 
-  const toggleStatus = (id) => {
-    setPros(pros.map((p) =>
-      p.id === id ? { ...p, status: p.status === 'Active' ? 'Suspended' : 'Active' } : p
-    ))
+  useEffect(() => {
+    fetchProfessionals()
+  }, [])
+
+  const fetchProfessionals = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/api/admin/professionals', {
+        headers: getAuthHeaders(),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to fetch professionals')
+      }
+
+      setPros(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Error fetching professionals:', error)
+      setError(error.message || 'Failed to fetch professionals')
+      setPros([])
+    }
   }
 
   const filtered = pros.filter((p) =>
@@ -24,6 +41,8 @@ export default function ManageProfessionals() {
         <h1>Manage Professionals</h1>
         <p>Review and manage service professionals</p>
       </div>
+
+      {error && <p className="auth-message error">{error}</p>}
 
       <div style={{ marginBottom: '20px' }}>
         <input
@@ -42,45 +61,30 @@ export default function ManageProfessionals() {
             <thead>
               <tr>
                 <th>Professional</th>
+                <th>Email</th>
                 <th>Category</th>
-                <th>Location</th>
-                <th>Rating</th>
-                <th>Reviews</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                      <span style={{ fontWeight: 500 }}>{p.name}</span>
-                    </div>
-                  </td>
-                  <td>{p.category}</td>
-                  <td>{p.location}</td>
-                  <td>
-                    <span className="stars">{'★'}</span> {p.rating}
-                  </td>
-                  <td>{p.reviews}</td>
-                  <td>
-                    <span className={`badge ${p.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
-                      {p.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button className="btn btn-outline btn-sm" onClick={() => toggleStatus(p.id)}>
-                      {p.status === 'Active' ? 'Suspend' : 'Activate'}
-                    </button>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={4} style={{ textAlign: 'center', padding: '24px', color: 'var(--gray-500)' }}>
+                    No professionals found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtered.map((p) => (
+                  <tr key={p.id}>
+                    <td style={{ fontWeight: 500 }}>{p.name}</td>
+                    <td>{p.email}</td>
+                    <td>{p.category}</td>
+                    <td>
+                      <span className="badge badge-success">{p.status || 'Active'}</span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

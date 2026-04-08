@@ -23,9 +23,11 @@ export default function SupportLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleLogout = () => {
-    localStorage.clear()
-    navigate('/login')
-  }
+  localStorage.removeItem('token')
+  localStorage.removeItem('role')
+  localStorage.removeItem('user')
+  navigate('/login')
+}
 
   const closeMenu = () => setIsMobileMenuOpen(false)
 

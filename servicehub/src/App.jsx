@@ -42,7 +42,7 @@ export default function App() {
       <Route
         path="/user"
         element={
-          <ProtectedRoute allowedRole="user">
+          <ProtectedRoute allowedRole="USER">
             <UserLayout />
           </ProtectedRoute>
         }
@@ -58,7 +58,7 @@ export default function App() {
       <Route
         path="/professional"
         element={
-          <ProtectedRoute allowedRole="professional">
+          <ProtectedRoute allowedRole="PROFESSIONAL">
             <ProfessionalLayout />
           </ProtectedRoute>
         }
@@ -74,7 +74,7 @@ export default function App() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRole="admin">
+          <ProtectedRoute allowedRole="ADMIN">
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -90,7 +90,7 @@ export default function App() {
       <Route
         path="/support"
         element={
-          <ProtectedRoute allowedRole="support">
+          <ProtectedRoute allowedRole="SUPPORT">
             <SupportLayout />
           </ProtectedRoute>
         }

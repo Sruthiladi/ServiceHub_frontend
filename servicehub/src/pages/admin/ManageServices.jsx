@@ -1,104 +1,146 @@
-import { useState } from 'react'
-import { serviceCategories } from '../../data/mockData'
-
-const initialServiceData = serviceCategories.map((cat, i) => ({
-  id: i + 1,
-  name: cat,
-  professionals: Math.floor(Math.random() * 20) + 5,
-  bookings: Math.floor(Math.random() * 50) + 10,
-  status: 'Active',
-}))
+import { useEffect, useState } from 'react'
+import { getAuthHeaders } from '../../utils/authHeader'
 
 export default function ManageServices() {
-  const [services, setServices] = useState(initialServiceData)
-  const [showForm, setShowForm] = useState(false)
-  const [newName, setNewName] = useState('')
+  const [services, setServices] = useState([])
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
-  const handleAdd = (e) => {
-    e.preventDefault()
-    setServices([
-      ...services,
-      { id: Date.now(), name: newName, professionals: 0, bookings: 0, status: 'Active' },
-    ])
-    setNewName('')
-    setShowForm(false)
+  useEffect(() => {
+    fetchServices()
+  }, [])
+
+  const fetchServices = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/api/admin/services', {
+        headers: getAuthHeaders(),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to fetch services')
+      }
+
+      setServices(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Error fetching services:', error)
+      setError(error.message || 'Failed to fetch services')
+      setServices([])
+    }
   }
 
-  const toggleStatus = (id) => {
-    setServices(services.map((s) =>
-      s.id === id ? { ...s, status: s.status === 'Active' ? 'Disabled' : 'Active' } : s
-    ))
+  const toggleStatus = async (id) => {
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/admin/services/${id}/toggle-status`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+      })
+
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : null
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Failed to update service status')
+      }
+
+      setSuccess('Service status updated successfully')
+      fetchServices()
+
+      setTimeout(() => setSuccess(''), 2500)
+    } catch (error) {
+      console.error('Error toggling service status:', error)
+      setError(error.message || 'Failed to update service status')
+    }
   }
 
-  const removeService = (id) => {
-    setServices(services.filter((s) => s.id !== id))
+  const removeService = async (id) => {
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/admin/services/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : null
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Failed to remove service')
+      }
+
+      setSuccess('Service removed successfully')
+      fetchServices()
+
+      setTimeout(() => setSuccess(''), 2500)
+    } catch (error) {
+      console.error('Error removing service:', error)
+      setError(error.message || 'Failed to remove service')
+    }
   }
 
   return (
     <div>
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1>Manage Services</h1>
-          <p>Configure available service categories</p>
-        </div>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancel' : '+ Add Category'}
-        </button>
+      <div className="page-header">
+        <h1>Manage Services</h1>
+        <p>View and manage all service listings</p>
       </div>
 
-      {showForm && (
-        <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
-          <form onSubmit={handleAdd} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-            <div className="form-group" style={{ flex: 1 }}>
-              <label className="form-label">Category Name</label>
-              <input
-                className="form-input"
-                placeholder="e.g. Gardening"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="btn btn-primary">Add</button>
-          </form>
-        </div>
-      )}
+      {error && <p className="auth-message error">{error}</p>}
+      {success && <p className="auth-message success">{success}</p>}
 
       <div className="card">
         <div className="table-wrapper">
           <table className="data-table">
             <thead>
               <tr>
+                <th>Service</th>
                 <th>Category</th>
-                <th>Professionals</th>
-                <th>Bookings</th>
+                <th>Professional</th>
+                <th>Price</th>
+                <th>Duration</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {services.map((s) => (
-                <tr key={s.id}>
-                  <td style={{ fontWeight: 500 }}>{s.name}</td>
-                  <td>{s.professionals}</td>
-                  <td>{s.bookings}</td>
-                  <td>
-                    <span className={`badge ${s.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
-                      {s.status}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn btn-outline btn-sm" onClick={() => toggleStatus(s.id)}>
-                        {s.status === 'Active' ? 'Disable' : 'Enable'}
-                      </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => removeService(s.id)}>
-                        Remove
-                      </button>
-                    </div>
+              {services.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: 'var(--gray-500)' }}>
+                    No services found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                services.map((s) => (
+                  <tr key={s.id}>
+                    <td style={{ fontWeight: 500 }}>{s.name}</td>
+                    <td>{s.category}</td>
+                    <td>{s.professionalName}</td>
+                    <td>₹{s.price}</td>
+                    <td>{s.duration}</td>
+                    <td>
+                      <span className={`badge ${s.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
+                        {s.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-outline btn-sm" onClick={() => toggleStatus(s.id)}>
+                          {s.status === 'Active' ? 'Disable' : 'Enable'}
+                        </button>
+                        <button className="btn btn-danger btn-sm" onClick={() => removeService(s.id)}>
+                          Remove
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

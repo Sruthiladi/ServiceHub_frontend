@@ -1,49 +1,56 @@
-import { useState } from 'react'
-
-const initialRequests = [
-  {
-    id: 'RQ001',
-    customer: 'Amit Gupta',
-    service: 'Website Development',
-    date: '2026-03-02',
-    time: '10:00 AM',
-    status: 'Pending',
-  },
-  {
-    id: 'RQ002',
-    customer: 'Sneha Roy',
-    service: 'IT Support',
-    date: '2026-03-04',
-    time: '2:00 PM',
-    status: 'Pending',
-  },
-  {
-    id: 'RQ003',
-    customer: 'Kavita Joshi',
-    service: 'System Setup',
-    date: '2026-02-28',
-    time: '11:00 AM',
-    status: 'Accepted',
-  },
-  {
-    id: 'RQ004',
-    customer: 'Rohan Das',
-    service: 'Technical Consulting',
-    date: '2026-02-25',
-    time: '9:00 AM',
-    status: 'Completed',
-  },
-]
+import { useEffect, useState } from 'react'
+import { getAuthHeaders } from '../../utils/authHeader'
 
 export default function Requests() {
-  const [requests, setRequests] = useState(initialRequests)
+  const storedUser = JSON.parse(localStorage.getItem('user'))
+  const professionalId = storedUser?.id
+
+  const [requests, setRequests] = useState([])
   const [filter, setFilter] = useState('All')
 
-  const updateStatus = (id, status) => {
-    setRequests(requests.map((r) => (r.id === id ? { ...r, status } : r)))
+  const fetchRequests = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/bookings/professional/${professionalId}`,
+        {
+          headers: getAuthHeaders(),
+        }
+      )
+
+      const data = await response.json()
+      setRequests(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('Failed to fetch requests', err)
+    }
   }
 
-  const filtered = filter === 'All' ? requests : requests.filter((r) => r.status === filter)
+  useEffect(() => {
+    if (professionalId) fetchRequests()
+  }, [professionalId])
+
+  const updateStatus = async (id, status) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/bookings/${id}/status`, {
+  method: 'PUT',
+  headers: getAuthHeaders(),
+  body: JSON.stringify({ status }),
+})
+const text = await response.text()
+const data = text ? JSON.parse(text) : null
+
+if (!response.ok) {
+  throw new Error(data?.message || 'Failed to update status')
+}
+
+fetchRequests()
+window.dispatchEvent(new Event('dashboardUpdated'))
+    } catch (err) {
+      console.error('Failed to update status', err)
+    }
+  }
+
+  const filtered =
+    filter === 'All' ? requests : requests.filter((r) => r.status === filter)
 
   return (
     <div>
@@ -81,43 +88,72 @@ export default function Requests() {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '24px', color: 'var(--gray-500)' }}>
+                  <td
+                    colSpan={7}
+                    style={{
+                      textAlign: 'center',
+                      padding: '24px',
+                      color: 'var(--gray-500)',
+                    }}
+                  >
                     No requests found.
                   </td>
                 </tr>
               ) : (
                 filtered.map((r) => (
                   <tr key={r.id}>
-                    <td style={{ fontWeight: 500 }}>{r.id}</td>
-                    <td>{r.customer}</td>
-                    <td>{r.service}</td>
-                    <td>{r.date}</td>
-                    <td>{r.time}</td>
+                    <td style={{ fontWeight: 500 }}>BK{r.id}</td>
+                    <td>{r.customerName}</td>
+                    <td>{r.serviceName}</td>
+                    <td>{r.bookingDate}</td>
+                    <td>{r.bookingTime}</td>
                     <td>
-                      <span className={`badge ${
-                        r.status === 'Pending' ? 'badge-warning' :
-                        r.status === 'Accepted' ? 'badge-primary' :
-                        r.status === 'Completed' ? 'badge-success' : 'badge-danger'
-                      }`}>
+                      <span
+                        className={`badge ${
+                          r.status === 'Pending'
+                            ? 'badge-warning'
+                            : r.status === 'Accepted'
+                            ? 'badge-primary'
+                            : r.status === 'Completed'
+                            ? 'badge-success'
+                            : 'badge-danger'
+                        }`}
+                      >
                         {r.status}
                       </span>
                     </td>
                     <td>
                       {r.status === 'Pending' ? (
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button className="btn btn-primary btn-sm" onClick={() => updateStatus(r.id, 'Accepted')}>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => updateStatus(r.id, 'Accepted')}
+                          >
                             Accept
                           </button>
-                          <button className="btn btn-danger btn-sm" onClick={() => updateStatus(r.id, 'Declined')}>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => updateStatus(r.id, 'Declined')}
+                          >
                             Decline
                           </button>
                         </div>
                       ) : r.status === 'Accepted' ? (
-                        <button className="btn btn-outline btn-sm" onClick={() => updateStatus(r.id, 'Completed')}>
+                        <button
+                          className="btn btn-outline btn-sm"
+                          onClick={() => updateStatus(r.id, 'Completed')}
+                        >
                           Mark Complete
                         </button>
                       ) : (
-                        <span style={{ fontSize: '0.8125rem', color: 'var(--gray-400)' }}>No action</span>
+                        <span
+                          style={{
+                            fontSize: '0.8125rem',
+                            color: 'var(--gray-400)',
+                          }}
+                        >
+                          No action
+                        </span>
                       )}
                     </td>
                   </tr>

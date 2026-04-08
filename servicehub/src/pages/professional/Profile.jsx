@@ -1,18 +1,47 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function Profile() {
   const [profile, setProfile] = useState({
-    name: 'Rajesh Kumar',
-    email: 'rajesh@example.com',
-    phone: '+91 98765 43210',
+    name: '',
+    email: '',
+    phone: '',
     category: 'Technology',
-    experience: '12 years',
-    location: 'Delhi, DL',
-    bio: 'Technology expert offering IT support, system setup, and web development services for individuals and businesses.',
+    experience: '0 years',
+    location: '',
+    bio: '',
   })
 
   const [editing, setEditing] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // Load logged-in user details
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem('user'))
+
+    if (storedUser) {
+      setProfile((prev) => ({
+        ...prev,
+        name: storedUser.name || '',
+        email: storedUser.email || '',
+      }))
+    }
+  }, [])
+
+  // Load extra professional details from localStorage
+  useEffect(() => {
+    const savedProfile = JSON.parse(localStorage.getItem('professionalProfile'))
+
+    if (savedProfile) {
+      setProfile((prev) => ({
+        ...prev,
+        phone: savedProfile.phone || '',
+        category: savedProfile.category || 'Technology',
+        experience: savedProfile.experience || '0 years',
+        location: savedProfile.location || '',
+        bio: savedProfile.bio || '',
+      }))
+    }
+  }, [])
 
   const handleChange = (field, value) => {
     setProfile({ ...profile, [field]: value })
@@ -20,6 +49,19 @@ export default function Profile() {
 
   const handleSave = () => {
     setEditing(false)
+
+    // Save only editable extra fields
+    localStorage.setItem(
+      'professionalProfile',
+      JSON.stringify({
+        phone: profile.phone,
+        category: profile.category,
+        experience: profile.experience,
+        location: profile.location,
+        bio: profile.bio,
+      })
+    )
+
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -85,20 +127,28 @@ export default function Profile() {
             borderBottom: '1px solid var(--gray-200)',
           }}
         >
-          <img
-            src="https://media.istockphoto.com/id/589544922/photo/doing-business-with-his-brain.jpg?s=612x612&w=0&k=20&c=5WdQs54XbpQI6kd0uFFe5aLJ44QH3DpDEmBda20u60A="
-            alt="Profile"
+          <div
             style={{
               width: '80px',
               height: '80px',
               borderRadius: '50%',
-              objectFit: 'cover',
+              background: 'var(--primary-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              fontWeight: 700,
+              color: 'var(--primary)',
             }}
-          />
+          >
+            {profile.name ? profile.name.charAt(0).toUpperCase() : 'P'}
+          </div>
+
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-              {profile.name}
+              {profile.name || 'Professional User'}
             </h2>
+
             <p
               style={{
                 color: 'var(--primary)',
@@ -108,13 +158,15 @@ export default function Profile() {
             >
               {profile.category}
             </p>
+
             <p
               style={{
                 color: 'var(--gray-500)',
                 fontSize: '0.8125rem',
               }}
             >
-              {profile.experience} experience &middot; {profile.location}
+              {profile.experience} experience
+              {profile.location ? ` · ${profile.location}` : ''}
             </p>
           </div>
         </div>
@@ -128,28 +180,12 @@ export default function Profile() {
         >
           <div className="form-group">
             <label className="form-label">Full Name</label>
-            {editing ? (
-              <input
-                className="form-input"
-                value={profile.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-              />
-            ) : (
-              <p className="form-value">{profile.name}</p>
-            )}
+            <p className="form-value">{profile.name || '-'}</p>
           </div>
 
           <div className="form-group">
             <label className="form-label">Email</label>
-            {editing ? (
-              <input
-                className="form-input"
-                value={profile.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-              />
-            ) : (
-              <p className="form-value">{profile.email}</p>
-            )}
+            <p className="form-value">{profile.email || '-'}</p>
           </div>
 
           <div className="form-group">
@@ -161,7 +197,33 @@ export default function Profile() {
                 onChange={(e) => handleChange('phone', e.target.value)}
               />
             ) : (
-              <p className="form-value">{profile.phone}</p>
+              <p className="form-value">{profile.phone || '-'}</p>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Category</label>
+            {editing ? (
+              <input
+                className="form-input"
+                value={profile.category}
+                onChange={(e) => handleChange('category', e.target.value)}
+              />
+            ) : (
+              <p className="form-value">{profile.category || '-'}</p>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Experience</label>
+            {editing ? (
+              <input
+                className="form-input"
+                value={profile.experience}
+                onChange={(e) => handleChange('experience', e.target.value)}
+              />
+            ) : (
+              <p className="form-value">{profile.experience || '-'}</p>
             )}
           </div>
 
@@ -174,7 +236,7 @@ export default function Profile() {
                 onChange={(e) => handleChange('location', e.target.value)}
               />
             ) : (
-              <p className="form-value">{profile.location}</p>
+              <p className="form-value">{profile.location || '-'}</p>
             )}
           </div>
 
@@ -187,7 +249,7 @@ export default function Profile() {
                 onChange={(e) => handleChange('bio', e.target.value)}
               />
             ) : (
-              <p className="form-value">{profile.bio}</p>
+              <p className="form-value">{profile.bio || '-'}</p>
             )}
           </div>
         </div>

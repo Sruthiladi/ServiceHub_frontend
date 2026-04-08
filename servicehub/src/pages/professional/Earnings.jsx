@@ -1,45 +1,54 @@
-import { mockEarnings } from '../../data/mockData'
-
-const transactions = [
-  {
-    id: 'TXN001',
-    service: 'Website Development',
-    customer: 'Amit Gupta',
-    date: '2026-02-22',
-    amount: 800,
-    status: 'Paid',
-  },
-  {
-    id: 'TXN002',
-    service: 'IT Support',
-    customer: 'Sneha Roy',
-    date: '2026-02-18',
-    amount: 500,
-    status: 'Paid',
-  },
-  {
-    id: 'TXN003',
-    service: 'System Setup',
-    customer: 'Kavita Joshi',
-    date: '2026-02-15',
-    amount: 700,
-    status: 'Paid',
-  },
-  {
-    id: 'TXN004',
-    service: 'Technical Consulting',
-    customer: 'Rohan Das',
-    date: '2026-02-10',
-    amount: 1200,
-    status: 'Pending',
-  },
-]
+import { useEffect, useState } from 'react'
+import { getAuthHeaders } from '../../utils/authHeader'
 
 export default function Earnings() {
-  const totalEarnings = mockEarnings.reduce((sum, e) => sum + e.amount, 0)
-  const thisMonth = mockEarnings[mockEarnings.length - 1].amount
-  const lastMonth = mockEarnings[mockEarnings.length - 2].amount
-  const maxEarning = Math.max(...mockEarnings.map((e) => e.amount))
+  const storedUser = JSON.parse(localStorage.getItem('user'))
+  const professionalId = storedUser?.id
+
+  const [summary, setSummary] = useState({
+    totalEarnings: 0,
+    completedJobs: 0,
+    pendingJobs: 0,
+    pendingPayouts: 0,
+  })
+
+  const [transactions, setTransactions] = useState([])
+
+  useEffect(() => {
+    if (professionalId) {
+      fetchEarnings()
+      fetchTransactions()
+    }
+  }, [professionalId])
+
+  const fetchEarnings = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/professional/${professionalId}/earnings`,
+        {
+                  headers: getAuthHeaders(),
+                }
+      )
+      const data = await response.json()
+      setSummary(data)
+    } catch (error) {
+      console.error('Failed to fetch earnings:', error)
+    }
+  }
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/professional/${professionalId}/earnings/bookings`,
+        {
+                  headers: getAuthHeaders(),
+                }
+      )
+      const data = await response.json()
+      setTransactions(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Failed to fetch transactions:', error)
+      setTransactions([])
+    }
+  }
 
   return (
     <div>
@@ -51,47 +60,26 @@ export default function Earnings() {
       <div className="stats-grid">
         <div className="card stat-card">
           <div className="stat-label">Total Earnings</div>
-          <div className="stat-value">₹{totalEarnings.toLocaleString()}</div>
-          <div className="stat-change positive">Last 6 months</div>
+          <div className="stat-value">₹{summary.totalEarnings.toLocaleString()}</div>
+          <div className="stat-change positive">Completed jobs only</div>
         </div>
 
         <div className="card stat-card">
-          <div className="stat-label">This Month</div>
-          <div className="stat-value">₹{thisMonth.toLocaleString()}</div>
-          <div className={`stat-change ${thisMonth >= lastMonth ? 'positive' : 'negative'}`}>
-            {thisMonth >= lastMonth ? '+' : ''}
-            {(((thisMonth - lastMonth) / lastMonth) * 100).toFixed(0)}% vs last month
-          </div>
+          <div className="stat-label">Completed Jobs</div>
+          <div className="stat-value">{summary.completedJobs}</div>
+          <div className="stat-change positive">Successfully delivered</div>
         </div>
 
         <div className="card stat-card">
-          <div className="stat-label">Avg. per Month</div>
-          <div className="stat-value">
-            ₹{Math.round(totalEarnings / mockEarnings.length).toLocaleString()}
-          </div>
-          <div className="stat-change">6-month average</div>
+          <div className="stat-label">Pending Jobs</div>
+          <div className="stat-value">{summary.pendingJobs}</div>
+          <div className="stat-change">Awaiting completion</div>
         </div>
 
         <div className="card stat-card">
           <div className="stat-label">Pending Payouts</div>
-          <div className="stat-value">₹2,500</div>
-          <div className="stat-change">1 transaction</div>
-        </div>
-      </div>
-
-      <div className="card chart-container">
-        <h3>Monthly Earnings</h3>
-        <div className="chart-bars">
-          {mockEarnings.map((item) => (
-            <div key={item.month} className="chart-bar-group">
-              <span className="chart-bar-value">₹{(item.amount / 1000).toFixed(1)}k</span>
-              <div
-                className="chart-bar"
-                style={{ height: `${(item.amount / maxEarning) * 160}px` }}
-              />
-              <span className="chart-bar-label">{item.month}</span>
-            </div>
-          ))}
+          <div className="stat-value">₹{summary.pendingPayouts.toLocaleString()}</div>
+          <div className="stat-change">Expected earnings</div>
         </div>
       </div>
 
@@ -103,7 +91,7 @@ export default function Earnings() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Transaction ID</th>
+                <th>Booking ID</th>
                 <th>Service</th>
                 <th>Customer</th>
                 <th>Date</th>
@@ -112,20 +100,36 @@ export default function Earnings() {
               </tr>
             </thead>
             <tbody>
-              {transactions.map((t) => (
-                <tr key={t.id}>
-                  <td style={{ fontWeight: 500 }}>{t.id}</td>
-                  <td>{t.service}</td>
-                  <td>{t.customer}</td>
-                  <td>{t.date}</td>
-                  <td style={{ fontWeight: 600 }}>₹{t.amount}</td>
-                  <td>
-                    <span className={`badge ${t.status === 'Paid' ? 'badge-success' : 'badge-warning'}`}>
-                      {t.status}
-                    </span>
+              {transactions.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--gray-500)' }}>
+                    No transactions found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                transactions.map((t) => (
+                  <tr key={t.id}>
+                    <td style={{ fontWeight: 500 }}>BK{t.id}</td>
+                    <td>{t.serviceName}</td>
+                    <td>{t.customerName}</td>
+                    <td>{t.bookingDate}</td>
+                    <td style={{ fontWeight: 600 }}>₹{t.amount}</td>
+                    <td>
+                      <span className={`badge ${
+                        t.status === 'Completed'
+                          ? 'badge-success'
+                          : t.status === 'Accepted'
+                          ? 'badge-primary'
+                          : t.status === 'Pending'
+                          ? 'badge-warning'
+                          : 'badge-danger'
+                      }`}>
+                        {t.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

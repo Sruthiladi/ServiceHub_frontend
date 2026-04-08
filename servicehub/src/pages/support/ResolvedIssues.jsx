@@ -1,18 +1,42 @@
-const resolvedIssues = [
-  { id: 'Q004', user: 'Kavita Joshi', subject: 'Unable to make payment', priority: 'Low', date: '2026-02-10', resolvedDate: '2026-02-11', resolvedBy: 'Support Agent 1' },
-  { id: 'Q005', user: 'Rahul Mehta', subject: 'Wrong professional assigned', priority: 'High', date: '2026-02-05', resolvedDate: '2026-02-06', resolvedBy: 'Support Agent 2' },
-  { id: 'Q006', user: 'Deepa Nair', subject: 'Duplicate booking charge', priority: 'Medium', date: '2026-01-28', resolvedDate: '2026-01-30', resolvedBy: 'Support Agent 1' },
-  { id: 'Q007', user: 'Suresh Iyer', subject: 'Profile update not saving', priority: 'Low', date: '2026-01-20', resolvedDate: '2026-01-20', resolvedBy: 'Support Agent 3' },
-  { id: 'Q008', user: 'Meera Shah', subject: 'Booking cancellation issue', priority: 'Medium', date: '2026-01-15', resolvedDate: '2026-01-17', resolvedBy: 'Support Agent 2' },
-]
+import { useEffect, useState } from 'react'
+import { getAuthHeaders } from '../../utils/authHeader'
 
 export default function ResolvedIssues() {
+  const [resolvedIssues, setResolvedIssues] = useState([])
+  const [error, setError] = useState('')
+
+  const fetchResolvedIssues = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/support/resolved', {
+        headers: getAuthHeaders(),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch resolved issues')
+      }
+
+      setResolvedIssues(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('Failed to fetch resolved issues', err)
+      setError(err.message || 'Failed to fetch resolved issues')
+      setResolvedIssues([])
+    }
+  }
+
+  useEffect(() => {
+    fetchResolvedIssues()
+  }, [])
+
   return (
     <div>
       <div className="page-header">
         <h1>Resolved Issues</h1>
         <p>Archive of resolved support tickets</p>
       </div>
+
+      {error && <p className="auth-message error">{error}</p>}
 
       <div className="stats-grid" style={{ marginBottom: '24px' }}>
         <div className="card stat-card">
@@ -22,13 +46,13 @@ export default function ResolvedIssues() {
         </div>
         <div className="card stat-card">
           <div className="stat-label">Avg. Resolution Time</div>
-          <div className="stat-value">1.4 days</div>
-          <div className="stat-change positive">-0.3 days vs last month</div>
+          <div className="stat-value">1.2 days</div>
+          <div className="stat-change positive">Stable</div>
         </div>
         <div className="card stat-card">
-          <div className="stat-label">Satisfaction Rate</div>
-          <div className="stat-value">94%</div>
-          <div className="stat-change positive">+2% this month</div>
+          <div className="stat-label">Support Efficiency</div>
+          <div className="stat-value">92%</div>
+          <div className="stat-change positive">Good</div>
         </div>
       </div>
 
@@ -40,6 +64,7 @@ export default function ResolvedIssues() {
                 <th>ID</th>
                 <th>User</th>
                 <th>Subject</th>
+                <th>Category</th>
                 <th>Priority</th>
                 <th>Reported</th>
                 <th>Resolved</th>
@@ -47,24 +72,38 @@ export default function ResolvedIssues() {
               </tr>
             </thead>
             <tbody>
-              {resolvedIssues.map((issue) => (
-                <tr key={issue.id}>
-                  <td style={{ fontWeight: 500 }}>{issue.id}</td>
-                  <td>{issue.user}</td>
-                  <td>{issue.subject}</td>
-                  <td>
-                    <span className={`badge ${
-                      issue.priority === 'High' ? 'badge-danger' :
-                      issue.priority === 'Medium' ? 'badge-warning' : 'badge-success'
-                    }`}>
-                      {issue.priority}
-                    </span>
+              {resolvedIssues.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '24px', color: 'var(--gray-500)' }}>
+                    No resolved issues yet.
                   </td>
-                  <td>{issue.date}</td>
-                  <td>{issue.resolvedDate}</td>
-                  <td>{issue.resolvedBy}</td>
                 </tr>
-              ))}
+              ) : (
+                resolvedIssues.map((issue) => (
+                  <tr key={issue.id}>
+                    <td style={{ fontWeight: 500 }}>Q{issue.id}</td>
+                    <td>{issue.userName}</td>
+                    <td>{issue.subject}</td>
+                    <td>{issue.category}</td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          issue.priority === 'High'
+                            ? 'badge-danger'
+                            : issue.priority === 'Medium'
+                            ? 'badge-warning'
+                            : 'badge-success'
+                        }`}
+                      >
+                        {issue.priority}
+                      </span>
+                    </td>
+                    <td>{issue.createdAt}</td>
+                    <td>{issue.resolvedAt}</td>
+                    <td>{issue.resolvedBy}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

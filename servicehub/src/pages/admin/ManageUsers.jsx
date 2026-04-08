@@ -1,18 +1,61 @@
-import { useState } from 'react'
-import { mockUsers } from '../../data/mockData'
+import { useEffect, useState } from 'react'
+import { getAuthHeaders } from '../../utils/authHeader'
 
 export default function ManageUsers() {
-  const [users, setUsers] = useState(mockUsers)
+  const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
-  const toggleStatus = (id) => {
-    setUsers(users.map((u) =>
-      u.id === id ? { ...u, status: u.status === 'Active' ? 'Suspended' : 'Active' } : u
-    ))
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/api/admin/users', {
+        headers: getAuthHeaders(),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to fetch users')
+      }
+
+      setUsers(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      setError(error.message || 'Failed to fetch users')
+      setUsers([])
+    }
   }
 
-  const removeUser = (id) => {
-    setUsers(users.filter((u) => u.id !== id))
+  const removeUser = async (id) => {
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/admin/users/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : null
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Failed to remove user')
+      }
+
+      setSuccess('User removed successfully')
+      fetchUsers()
+
+      setTimeout(() => setSuccess(''), 2500)
+    } catch (error) {
+      console.error('Error removing user:', error)
+      setError(error.message || 'Failed to remove user')
+    }
   }
 
   const filtered = users.filter((u) =>
@@ -26,6 +69,9 @@ export default function ManageUsers() {
         <h1>Manage Users</h1>
         <p>View and manage registered users</p>
       </div>
+
+      {error && <p className="auth-message error">{error}</p>}
+      {success && <p className="auth-message success">{success}</p>}
 
       <div style={{ marginBottom: '20px' }}>
         <input
@@ -64,21 +110,14 @@ export default function ManageUsers() {
                     <td style={{ fontWeight: 500 }}>{u.name}</td>
                     <td>{u.email}</td>
                     <td style={{ textTransform: 'capitalize' }}>{u.role}</td>
-                    <td>{u.joined}</td>
+                    <td>{u.joined || '-'}</td>
                     <td>
-                      <span className={`badge ${u.status === 'Active' ? 'badge-success' : 'badge-danger'}`}>
-                        {u.status}
-                      </span>
+                      <span className="badge badge-success">{u.status || 'Active'}</span>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="btn btn-outline btn-sm" onClick={() => toggleStatus(u.id)}>
-                          {u.status === 'Active' ? 'Suspend' : 'Activate'}
-                        </button>
-                        <button className="btn btn-danger btn-sm" onClick={() => removeUser(u.id)}>
-                          Remove
-                        </button>
-                      </div>
+                      <button className="btn btn-danger btn-sm" onClick={() => removeUser(u.id)}>
+                        Remove
+                      </button>
                     </td>
                   </tr>
                 ))

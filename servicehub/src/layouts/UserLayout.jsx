@@ -6,9 +6,11 @@ export default function UserLayout() {
   const navigate = useNavigate()
 
   const handleLogout = () => {
-    localStorage.clear()
-    navigate('/login')
-  }
+  localStorage.removeItem('token')
+  localStorage.removeItem('role')
+  localStorage.removeItem('user')
+  navigate('/login')
+}
 
   return (
     <div className="user-layout-container">

@@ -1,64 +1,119 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { professionals } from '../../data/mockData'
+import { getAuthHeaders } from '../../utils/authHeader'
 
 export default function BookService() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const professional = professionals.find((p) => p.id === Number(id))
+  const storedUser = JSON.parse(localStorage.getItem('user'))
+  const userId = storedUser?.id
 
-  const [service, setService] = useState('')
+  const [serviceData, setServiceData] = useState(null)
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
   const [notes, setNotes] = useState('')
   const [payment, setPayment] = useState('Card')
   const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
 
-  if (!professional) {
+  useEffect(() => {
+    fetch(`http://localhost:8080/api/services/${id}`)
+      .then((res) => res.json())
+      .then((data) => setServiceData(data))
+      .catch(() => setError('Failed to load service details'))
+  }, [id])
+
+  const handleConfirm = async (e) => {
+    e.preventDefault()
+    setError('')
+
+    try {
+      const response = await fetch('http://localhost:8080/api/bookings', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          serviceId: Number(id),
+          userId,
+          bookingDate: date,
+          bookingTime: time,
+          notes,
+          paymentMethod: payment,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Booking failed')
+      }
+
+      setSuccess(true)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  if (error && !serviceData) {
     return (
       <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
-        <p>Professional not found.</p>
-        <button className="btn btn-primary" onClick={() => navigate('/user/browse')} style={{ marginTop: '16px' }}>
+        <p>{error}</p>
+        <button
+          className="btn btn-primary"
+          onClick={() => navigate('/user/browse')}
+          style={{ marginTop: '16px' }}
+        >
           Browse Services
         </button>
       </div>
     )
   }
 
-  const handleConfirm = (e) => {
-    e.preventDefault()
-    const booking = {
-      id: `BK${Date.now()}`,
-      professionalId: professional.id,
-      professionalName: professional.name,
-      service,
-      date,
-      time,
-      notes,
-      payment,
-      amount: professional.price,
-      status: 'Confirmed',
-    }
-
-    const existing = JSON.parse(localStorage.getItem('bookings') || '[]')
-    existing.push(booking)
-    localStorage.setItem('bookings', JSON.stringify(existing))
-    setSuccess(true)
+  if (!serviceData) {
+    return <p>Loading service details...</p>
   }
 
   if (success) {
     return (
-      <div className="card" style={{ padding: '48px', textAlign: 'center', maxWidth: '480px', margin: '0 auto' }}>
+      <div
+        className="card"
+        style={{
+          padding: '48px',
+          textAlign: 'center',
+          maxWidth: '480px',
+          margin: '0 auto',
+        }}
+      >
         <div style={{ fontSize: '3rem', marginBottom: '16px' }}>&#10003;</div>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '8px' }}>Booking Confirmed!</h2>
-        <p style={{ color: 'var(--gray-500)', fontSize: '0.875rem', marginBottom: '24px' }}>
-          Your appointment with {professional.name} has been booked for {date} at {time}.
+        <h2
+          style={{
+            fontSize: '1.25rem',
+            fontWeight: 700,
+            marginBottom: '8px',
+          }}
+        >
+          Booking Submitted!
+        </h2>
+        <p
+          style={{
+            color: 'var(--gray-500)',
+            fontSize: '0.875rem',
+            marginBottom: '24px',
+          }}
+        >
+          Your request for {serviceData.name} with {serviceData.professionalName}{' '}
+          has been submitted for {date} at {time}.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-          <button className="btn btn-primary" onClick={() => navigate('/user/bookings')}>
+          <button
+            className="btn btn-primary"
+            onClick={() => navigate('/user/bookings')}
+          >
             View Bookings
           </button>
-          <button className="btn btn-secondary" onClick={() => navigate('/user/browse')}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate('/user/browse')}
+          >
             Browse More
           </button>
         </div>
@@ -76,21 +131,15 @@ export default function BookService() {
       <div className="book-layout">
         <form className="card book-form" onSubmit={handleConfirm}>
           <h2>Booking Details</h2>
+
+          {error && <p className="auth-message error">{error}</p>}
+
           <div className="form-grid">
             <div className="form-group form-full">
-              <label className="form-label">Select Service</label>
-              <select
-                className="form-select"
-                value={service}
-                onChange={(e) => setService(e.target.value)}
-                required
-              >
-                <option value="">Choose a service</option>
-                {professional.services.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+              <label className="form-label">Selected Service</label>
+              <input className="form-input" value={serviceData.name} disabled />
             </div>
+
             <div className="form-group">
               <label className="form-label">Preferred Date</label>
               <input
@@ -101,6 +150,7 @@ export default function BookService() {
                 required
               />
             </div>
+
             <div className="form-group">
               <label className="form-label">Preferred Time</label>
               <select
@@ -120,6 +170,7 @@ export default function BookService() {
                 <option value="5:00 PM">5:00 PM</option>
               </select>
             </div>
+
             <div className="form-group form-full">
               <label className="form-label">Additional Notes</label>
               <textarea
@@ -129,6 +180,7 @@ export default function BookService() {
                 onChange={(e) => setNotes(e.target.value)}
               />
             </div>
+
             <div className="form-group form-full">
               <label className="form-label">Payment Method</label>
               <div className="payment-methods">
@@ -145,29 +197,43 @@ export default function BookService() {
               </div>
             </div>
           </div>
-          <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: '20px' }}>
+
+          <button
+            type="submit"
+            className="btn btn-primary btn-lg"
+            style={{ width: '100%', marginTop: '20px' }}
+          >
             Confirm Booking
           </button>
         </form>
 
         <div className="card book-summary">
           <div className="summary-pro">
-            <img src={professional.image} alt={professional.name} />
+            <img
+              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                serviceData.professionalName
+              )}&background=0D8ABC&color=fff`}
+              alt={serviceData.professionalName}
+            />
             <div>
-              <h3>{professional.name}</h3>
-              <p>{professional.category}</p>
-              <div className="stars" style={{ fontSize: '0.8125rem' }}>
-                {'★'.repeat(Math.round(professional.rating))} {professional.rating}
-              </div>
+              <h3>{serviceData.professionalName}</h3>
+              <p>{serviceData.category}</p>
             </div>
           </div>
 
-          <h3 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '12px', color: 'var(--gray-900)' }}>
+          <h3
+            style={{
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              marginBottom: '12px',
+              color: 'var(--gray-900)',
+            }}
+          >
             Booking Summary
           </h3>
           <div className="summary-row">
             <span>Service</span>
-            <span>{service || '—'}</span>
+            <span>{serviceData.name}</span>
           </div>
           <div className="summary-row">
             <span>Date</span>
@@ -183,15 +249,15 @@ export default function BookService() {
           </div>
           <div className="summary-row">
             <span>Service Fee</span>
-            <span>{'₹'}{professional.price}</span>
+            <span>₹{serviceData.price}</span>
           </div>
           <div className="summary-row">
             <span>Platform Fee</span>
-            <span>{'₹'}49</span>
+            <span>₹49</span>
           </div>
           <div className="summary-row total">
             <span>Total</span>
-            <span>{'₹'}{professional.price + 49}</span>
+            <span>₹{serviceData.price + 49}</span>
           </div>
         </div>
       </div>

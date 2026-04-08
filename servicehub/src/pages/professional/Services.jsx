@@ -1,39 +1,117 @@
-import { useState } from 'react'
-
-const initialServices = [
-  { id: 1, name: 'IT Support', price: 500, duration: '1-2 hours', status: 'Active' },
-  { id: 2, name: 'Website Development', price: 800, duration: '3-5 days', status: 'Active' },
-  { id: 3, name: 'System Setup', price: 700, duration: '2-3 hours', status: 'Active' },
-  { id: 4, name: 'Technical Consulting', price: 1200, duration: '1 hour', status: 'Inactive' },
-]
+import { useEffect, useState } from 'react'
+import { getAuthHeaders } from '../../utils/authHeader'
 
 export default function Services() {
-  const [services, setServices] = useState(initialServices)
+  const storedUser = JSON.parse(localStorage.getItem('user'))
+  const professionalId = storedUser?.id
+
+  const [services, setServices] = useState([])
   const [showForm, setShowForm] = useState(false)
-  const [newService, setNewService] = useState({ name: '', price: '', duration: '' })
+  const [newService, setNewService] = useState({
+    name: '',
+    category: '',
+    price: '',
+    duration: '',
+  })
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
-  const handleAdd = (e) => {
-    e.preventDefault()
-    const service = {
-      id: Date.now(),
-      name: newService.name,
-      price: Number(newService.price),
-      duration: newService.duration,
-      status: 'Active',
+  const fetchServices = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/services/professional/${professionalId}`,
+        {
+          headers: getAuthHeaders(),
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to load services')
+      }
+
+      setServices(data)
+    } catch (err) {
+      setError(err.message || 'Failed to load services')
     }
-    setServices([...services, service])
-    setNewService({ name: '', price: '', duration: '' })
-    setShowForm(false)
   }
 
-  const toggleStatus = (id) => {
-    setServices(services.map((s) =>
-      s.id === id ? { ...s, status: s.status === 'Active' ? 'Inactive' : 'Active' } : s
-    ))
+  useEffect(() => {
+    if (professionalId) fetchServices()
+  }, [professionalId])
+
+  const handleAdd = async (e) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await fetch('http://localhost:8080/api/services', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          ...newService,
+          price: Number(newService.price),
+          professionalId,
+        }),
+      })
+
+      // ✅ Safe parsing
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : null
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Failed to add service')
+      }
+
+      setSuccess('Service added successfully!')
+      setNewService({ name: '', category: '', price: '', duration: '' })
+      setShowForm(false)
+      fetchServices()
+    } catch (err) {
+      setError(err.message || 'Failed to add service')
+    }
   }
 
-  const removeService = (id) => {
-    setServices(services.filter((s) => s.id !== id))
+  const toggleStatus = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/services/${id}/toggle-status`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+      })
+
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : null
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Failed to update service status')
+      }
+
+      fetchServices()
+    } catch (err) {
+      setError(err.message || 'Failed to update service status')
+    }
+  }
+
+  const removeService = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/services/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+
+      const text = await response.text()
+      const data = text ? JSON.parse(text) : null
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Failed to remove service')
+      }
+
+      fetchServices()
+    } catch (err) {
+      setError(err.message || 'Failed to remove service')
+    }
   }
 
   return (
@@ -48,6 +126,9 @@ export default function Services() {
         </button>
       </div>
 
+      {error && <p className="auth-message error">{error}</p>}
+      {success && <p className="auth-message success">{success}</p>}
+
       {showForm && (
         <div className="card" style={{ padding: '20px', marginBottom: '20px' }}>
           <form onSubmit={handleAdd} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -60,6 +141,17 @@ export default function Services() {
                 required
               />
             </div>
+
+            <div className="form-group" style={{ flex: 1, minWidth: '180px' }}>
+              <label className="form-label">Category</label>
+              <input
+                className="form-input"
+                value={newService.category}
+                onChange={(e) => setNewService({ ...newService, category: e.target.value })}
+                required
+              />
+            </div>
+
             <div className="form-group" style={{ width: '140px' }}>
               <label className="form-label">Price (₹)</label>
               <input
@@ -70,6 +162,7 @@ export default function Services() {
                 required
               />
             </div>
+
             <div className="form-group" style={{ width: '160px' }}>
               <label className="form-label">Duration</label>
               <input
@@ -79,6 +172,7 @@ export default function Services() {
                 required
               />
             </div>
+
             <button type="submit" className="btn btn-primary">Add</button>
           </form>
         </div>
@@ -90,6 +184,7 @@ export default function Services() {
             <thead>
               <tr>
                 <th>Service</th>
+                <th>Category</th>
                 <th>Price</th>
                 <th>Duration</th>
                 <th>Status</th>
@@ -100,6 +195,7 @@ export default function Services() {
               {services.map((s) => (
                 <tr key={s.id}>
                   <td style={{ fontWeight: 500 }}>{s.name}</td>
+                  <td>{s.category}</td>
                   <td>₹{s.price}</td>
                   <td>{s.duration}</td>
                   <td>
@@ -119,6 +215,13 @@ export default function Services() {
                   </td>
                 </tr>
               ))}
+              {services.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '24px' }}>
+                    No services added yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
