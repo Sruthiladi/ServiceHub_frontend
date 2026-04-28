@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 const faqs = [
   {
     question: 'How do I book a service?',
@@ -51,7 +52,7 @@ export default function HelpSupport() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/api/support', {
+      const response = await fetch(`${BASE_URL}/api/support`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({

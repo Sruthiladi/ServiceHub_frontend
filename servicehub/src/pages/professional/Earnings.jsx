@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function Earnings() {
   const storedUser = JSON.parse(localStorage.getItem('user'))
   const professionalId = storedUser?.id
@@ -23,7 +24,7 @@ export default function Earnings() {
 
   const fetchEarnings = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/professional/${professionalId}/earnings`,
+      const response = await fetch(`${BASE_URL}/api/professional/${professionalId}/earnings`,
         {
                   headers: getAuthHeaders(),
                 }
@@ -37,7 +38,7 @@ export default function Earnings() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/professional/${professionalId}/earnings/bookings`,
+      const response = await fetch(`${BASE_URL}/api/professional/${professionalId}/earnings/bookings`,
         {
                   headers: getAuthHeaders(),
                 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function Requests() {
   const storedUser = JSON.parse(localStorage.getItem('user'))
   const professionalId = storedUser?.id
@@ -11,7 +12,7 @@ export default function Requests() {
   const fetchRequests = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/bookings/professional/${professionalId}`,
+        `${BASE_URL}/api/bookings/professional/${professionalId}`,
         {
           headers: getAuthHeaders(),
         }
@@ -30,7 +31,7 @@ export default function Requests() {
 
   const updateStatus = async (id, status) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/bookings/${id}/status`, {
+      const response = await fetch(`${BASE_URL}/api/bookings/${id}/status`, {
   method: 'PUT',
   headers: getAuthHeaders(),
   body: JSON.stringify({ status }),

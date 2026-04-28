@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function Dashboard() {
   const [activeQueries, setActiveQueries] = useState([])
   const [resolvedQueries, setResolvedQueries] = useState([])
@@ -15,10 +16,10 @@ export default function Dashboard() {
       setError('')
 
       const [activeRes, resolvedRes] = await Promise.all([
-        fetch('http://localhost:8080/api/support/active', {
+        fetch(`${BASE_URL}/api/support/active`, {
           headers: getAuthHeaders(),
         }),
-        fetch('http://localhost:8080/api/support/resolved', {
+        fetch(`${BASE_URL}/api/support/resolved`, {
           headers: getAuthHeaders(),
         }),
       ])

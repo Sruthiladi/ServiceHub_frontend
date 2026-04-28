@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function ManageUsers() {
   const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
@@ -13,7 +14,7 @@ export default function ManageUsers() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/admin/users', {
+      const res = await fetch(`${BASE_URL}/api/admin/users`, {
         headers: getAuthHeaders(),
       })
 
@@ -36,7 +37,7 @@ export default function ManageUsers() {
     setSuccess('')
 
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/users/${id}`, {
+      const response = await fetch(`${BASE_URL}/api/admin/users/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       })

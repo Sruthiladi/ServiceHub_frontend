@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function BookService() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -17,7 +18,7 @@ export default function BookService() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    fetch(`http://localhost:8080/api/services/${id}`)
+    fetch(`${BASE_URL}/api/services/${id}`)
       .then((res) => res.json())
       .then((data) => setServiceData(data))
       .catch(() => setError('Failed to load service details'))
@@ -28,7 +29,7 @@ export default function BookService() {
     setError('')
 
     try {
-      const response = await fetch('http://localhost:8080/api/bookings', {
+      const response = await fetch(`${BASE_URL}/api/bookings`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({

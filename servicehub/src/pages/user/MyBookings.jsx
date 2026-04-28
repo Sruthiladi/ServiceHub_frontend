@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function MyBookings() {
   const storedUser = JSON.parse(localStorage.getItem('user'))
   const userId = storedUser?.id
@@ -21,7 +22,7 @@ export default function MyBookings() {
 
   const fetchBookings = async () => {
     try {
-      const res = await fetch(`http://localhost:8080/api/bookings/user/${userId}`, {
+      const res = await fetch(`${BASE_URL}/api/bookings/user/${userId}`, {
         headers: getAuthHeaders(),
       })
 
@@ -33,7 +34,7 @@ export default function MyBookings() {
       for (const booking of bookingList) {
         try {
           const reviewRes = await fetch(
-            `http://localhost:8080/api/reviews/booking/${booking.id}`
+            `${BASE_URL}/api/reviews/booking/${booking.id}`
           )
           const reviewData = await reviewRes.json()
           reviewStatus[booking.id] = reviewData && reviewData.id ? true : false
@@ -63,7 +64,7 @@ export default function MyBookings() {
     setMessageType('success')
 
     try {
-      const response = await fetch('http://localhost:8080/api/reviews', {
+      const response = await fetch(`${BASE_URL}/api/reviews`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({

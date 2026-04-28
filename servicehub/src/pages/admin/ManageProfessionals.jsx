@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function ManageProfessionals() {
   const [pros, setPros] = useState([])
   const [search, setSearch] = useState('')
@@ -12,7 +13,7 @@ export default function ManageProfessionals() {
 
   const fetchProfessionals = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/admin/professionals', {
+      const res = await fetch(`${BASE_URL}/api/admin/professionals`, {
         headers: getAuthHeaders(),
       })
 

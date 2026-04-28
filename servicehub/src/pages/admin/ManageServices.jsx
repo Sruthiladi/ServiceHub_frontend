@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function ManageServices() {
   const [services, setServices] = useState([])
   const [error, setError] = useState('')
@@ -12,7 +13,7 @@ export default function ManageServices() {
 
   const fetchServices = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/admin/services', {
+      const res = await fetch(`${BASE_URL}/api/admin/services`, {
         headers: getAuthHeaders(),
       })
 
@@ -35,7 +36,7 @@ export default function ManageServices() {
     setSuccess('')
 
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/services/${id}/toggle-status`, {
+      const response = await fetch(`${BASE_URL}/api/admin/services/${id}/toggle-status`, {
         method: 'PUT',
         headers: getAuthHeaders(),
       })
@@ -62,7 +63,7 @@ export default function ManageServices() {
     setSuccess('')
 
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/services/${id}`, {
+      const response = await fetch(`${BASE_URL}/api/admin/services/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       })

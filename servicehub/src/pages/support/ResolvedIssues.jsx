@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function ResolvedIssues() {
   const [resolvedIssues, setResolvedIssues] = useState([])
   const [error, setError] = useState('')
 
   const fetchResolvedIssues = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/support/resolved', {
+      const response = await fetch(`${BASE_URL}/api/support/resolved`, {
         headers: getAuthHeaders(),
       })
 

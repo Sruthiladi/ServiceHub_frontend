@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function Dashboard() {
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -21,7 +22,7 @@ export default function Dashboard() {
 
   const fetchDashboard = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/admin/dashboard', {
+      const res = await fetch(`${BASE_URL}/api/admin/dashboard`, {
         headers: getAuthHeaders(),
       })
 
@@ -40,7 +41,7 @@ export default function Dashboard() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/admin/users', {
+      const res = await fetch(`${BASE_URL}/api/admin/users`, {
         headers: getAuthHeaders(),
       })
 
@@ -59,7 +60,7 @@ export default function Dashboard() {
 
   const fetchServices = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/admin/services', {
+      const res = await fetch(`${BASE_URL}/api/admin/services`, {
         headers: getAuthHeaders(),
       })
 

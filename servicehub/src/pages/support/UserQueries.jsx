@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function UserQueries() {
   const [queries, setQueries] = useState([])
   const [filter, setFilter] = useState('All')
@@ -9,7 +10,7 @@ export default function UserQueries() {
 
   const fetchQueries = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/support/active', {
+      const response = await fetch(`${BASE_URL}/api/support/active`, {
         headers: getAuthHeaders(),
       })
 
@@ -36,7 +37,7 @@ export default function UserQueries() {
     setSuccess('')
 
     try {
-      const response = await fetch(`http://localhost:8080/api/support/${id}/status`, {
+      const response = await fetch(`${BASE_URL}/api/support/${id}/status`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify({

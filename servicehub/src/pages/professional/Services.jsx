@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function Services() {
   const storedUser = JSON.parse(localStorage.getItem('user'))
   const professionalId = storedUser?.id
@@ -19,7 +20,7 @@ export default function Services() {
   const fetchServices = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/services/professional/${professionalId}`,
+        `${BASE_URL}/api/services/professional/${professionalId}`,
         {
           headers: getAuthHeaders(),
         }
@@ -47,7 +48,7 @@ export default function Services() {
     setSuccess('')
 
     try {
-      const response = await fetch('http://localhost:8080/api/services', {
+      const response = await fetch(`${BASE_URL}/api/services`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -76,7 +77,7 @@ export default function Services() {
 
   const toggleStatus = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/services/${id}/toggle-status`, {
+      const response = await fetch(`${BASE_URL}/api/services/${id}/toggle-status`, {
         method: 'PUT',
         headers: getAuthHeaders(),
       })
@@ -96,7 +97,7 @@ export default function Services() {
 
   const removeService = async (id) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/services/${id}`, {
+      const response = await fetch(`${BASE_URL}/api/services/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       })

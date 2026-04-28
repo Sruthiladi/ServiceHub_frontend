@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
+
 export default function BrowseServices() {
   const navigate = useNavigate()
   const [services, setServices] = useState([])
@@ -15,7 +17,7 @@ export default function BrowseServices() {
 
   const fetchServices = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/services')
+      const res = await fetch(`${BASE_URL}/api/services`)
       const data = await res.json()
 
       if (!res.ok) {
@@ -34,7 +36,7 @@ export default function BrowseServices() {
       for (const service of activeServices) {
         try {
           const res = await fetch(
-            `http://localhost:8080/api/reviews/service/${service.id}`
+            `${BASE_URL}/api/reviews/service/${service.id}`
           )
           const reviews = await res.json()
 

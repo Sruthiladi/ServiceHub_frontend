@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getAuthHeaders } from '../../utils/authHeader'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 export default function Dashboard() {
   const storedUser = JSON.parse(localStorage.getItem('user'))
   const professionalId = storedUser?.id
@@ -18,7 +19,7 @@ export default function Dashboard() {
   const fetchDashboard = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/professional/${professionalId}/dashboard`,
+        `${BASE_URL}/api/professional/${professionalId}/dashboard`,
         {
           headers: getAuthHeaders(),
         }
